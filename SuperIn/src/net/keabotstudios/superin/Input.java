@@ -273,7 +273,7 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	}
 
 	public boolean usingController() {
-		return activeController != null || !useXInputController;
+		return activeController != null && useXInputController;
 	}
 
 	public boolean hasFocus() {
