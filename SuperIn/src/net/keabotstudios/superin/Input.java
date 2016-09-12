@@ -29,8 +29,8 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	private int mouseX = 0, mouseY = 0;
 
 	private Controller activeController = null;
-	private Map<Component.Identifier, Float> controllerAxes = new HashMap<Component.Identifier, Float>();
-	private Map<Component.Identifier, Float> lastControllerAxes = new HashMap<Component.Identifier, Float>();
+	private HashMap<Component.Identifier, Float> controllerAxes = new HashMap<Component.Identifier, Float>();
+	private HashMap<Component.Identifier, Float> lastControllerAxes = new HashMap<Component.Identifier, Float>();
 
 	private boolean hasFocus = false;
 	private boolean useXInputController = false;
@@ -47,7 +47,7 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	}
 
 	private void scanControllers() {
-		if (usingController())
+		if (usingController() || !useXInputController)
 			return;
 		Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
 		for (int i = 0; i < ca.length; i++) {
@@ -84,16 +84,6 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	}
 
 	public void setInputs(InputAxis[] inputAxes) {
-		for(InputAxis a : inputAxes) {
-			if(a.getIdentifier() != null) {
-				Component c = activeController.getComponent(a.getIdentifier());
-				if(c == null) {
-					controllable.getLogger().fatal("Controller does not contain component: " + a.getIdentifier().getName() + ", not using controller.");
-					activeController = null;
-					break;
-				}
-			}
-		}
 		this.inputAxes = inputAxes;
 	}
 
@@ -109,29 +99,11 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 				lastMouseButtons[i] = mouseButtons[i];
 			}
 		}
-		
-		if (usingController()) {
-			if(!activeController.poll()) {
-				controllable.getLogger().info("Controller disconnected.");
-				activeController = null;
-				return;
-			}
-			for (Component comp : activeController.getComponents()) {
-				Identifier i = comp.getIdentifier();
-				if (lastControllerAxes.get(i).floatValue() != controllerAxes.get(i).floatValue()) {
-					lastControllerAxes.put(i, controllerAxes.get(i).floatValue());
-				}
-			}
+		if (usingController() && !activeController.poll()) {
+			activeController = null;
+			controllable.getLogger().info("Controller disconnected.");
 		}
-	}
-	
-	public void updateControllerInput() {
 		if (usingController()) {
-			if(!activeController.poll()) {
-				controllable.getLogger().info("Controller disconnected.");
-				activeController = null;
-				return;
-			}
 			scanControllers();
 			activeController.poll();
 			EventQueue queue = activeController.getEventQueue();
@@ -139,7 +111,12 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 			while (queue.getNextEvent(event)) {
 				Component comp = event.getComponent();
 				float value = event.getValue();
-				controllerAxes.put(comp.getIdentifier(), value);
+				controllerAxes.replace(comp.getIdentifier(), value);
+			}
+			for (Component comp : activeController.getComponents()) {
+				if (lastControllerAxes.get(comp.getIdentifier()) != controllerAxes.get(comp.getIdentifier())) {
+					lastControllerAxes.replace(comp.getIdentifier(), controllerAxes.get(comp.getIdentifier()));
+				}
 			}
 		}
 	}
