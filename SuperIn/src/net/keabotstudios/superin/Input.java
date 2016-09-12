@@ -8,17 +8,15 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.HashMap;
-import java.util.Map;
 
 import net.java.games.input.Component;
-import net.java.games.input.Component.Identifier;
 import net.java.games.input.Controller;
 import net.java.games.input.ControllerEnvironment;
 import net.java.games.input.Event;
 import net.java.games.input.EventQueue;
 
 public class Input implements KeyListener, MouseMotionListener, MouseListener, FocusListener {
-		
+
 	private static final int NUM_KEYS = KeyEvent.KEY_LAST;
 	private static final int NUM_MBTNS = MouseEvent.MOUSE_LAST;
 
@@ -99,10 +97,19 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 				lastMouseButtons[i] = mouseButtons[i];
 			}
 		}
-		if (usingController() && !activeController.poll()) {
-			activeController = null;
-			controllable.getLogger().info("Controller disconnected.");
+		if (usingController()) {
+			if (!activeController.poll()) {
+				activeController = null;
+				controllable.getLogger().info("Controller disconnected.");
+			}
 		}
+		
+	}
+	
+	/**
+	 * <b>IMPORTANT:</b> Run this before you call Input.update()!!! Run all methods that need input after this method, and then call Input.update() after that.
+	 */
+	public void updateControllerInput() {
 		if (usingController()) {
 			scanControllers();
 			activeController.poll();
@@ -266,7 +273,7 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	}
 
 	public boolean usingController() {
-		return activeController != null || !useXInputController;
+		return activeController != null && useXInputController;
 	}
 
 	public boolean hasFocus() {
