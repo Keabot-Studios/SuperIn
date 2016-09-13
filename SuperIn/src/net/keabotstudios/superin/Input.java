@@ -26,7 +26,7 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	private boolean[] lastKeys = new boolean[NUM_KEYS];
 	private boolean[] mouseButtons = new boolean[NUM_MBTNS];
 	private boolean[] lastMouseButtons = new boolean[NUM_MBTNS];
-	private String[] currentKeys;
+	private List<String> currentKeys;
 	private int mouseX = 0, mouseY = 0;
 
 	private Controller activeController = null;
@@ -107,7 +107,7 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 			}
 		}
 		
-		updateKeysPressed();
+		updateAxesPressed();
 	}
 
 	/**
@@ -304,7 +304,7 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 		return null;
 	}
 
-	private void updateKeysPressed() {
+	private void updateAxesPressed() {
 		List<String> keys = new ArrayList<String>();
 		if (inputAxes != null) {
 			for (InputAxis a : inputAxes) {
@@ -313,10 +313,10 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 				}
 			}
 		}
-		currentKeys = keys.toArray(new String[keys.size()]);
+		currentKeys = keys;
 	}
 
-	public String[] getKeysPressed() {
-		return currentKeys.clone();
+	public List<String> getAxesPressed() {
+		return currentKeys;
 	}
 }
