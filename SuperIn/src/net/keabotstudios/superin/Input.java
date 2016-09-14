@@ -1,5 +1,7 @@
 package net.keabotstudios.superin;
 
+import java.awt.AWTException;
+import java.awt.Robot;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
@@ -24,7 +26,8 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	private boolean[] lastKeys = new boolean[NUM_KEYS];
 	private boolean[] mouseButtons = new boolean[NUM_MBTNS];
 	private boolean[] lastMouseButtons = new boolean[NUM_MBTNS];
-	private int mouseX = 0, mouseY = 0;
+	private int mouseX = 0, mouseY = 0, mouseXOnScreen = 0, mouseYOnScreen = 0;
+	private Robot mouseController;
 
 	private Controller activeController = null;
 	private HashMap<Component.Identifier, Float> controllerAxes = new HashMap<Component.Identifier, Float>();
@@ -37,15 +40,23 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 
 	private InputAxis[] inputAxes;
 
-	public Input(Controllable contollable, boolean useXInputController) {
-		this.useXInputController = useXInputController;
-		setControllable(contollable);
+	private boolean mouseInControllable = false;
 
+	public Input(Controllable controllable, boolean useXInputController) {
+		this.useXInputController = useXInputController;
+		setControllable(controllable);
+		try {
+			this.mouseController = new Robot();
+		} catch (AWTException e) {
+			this.controllable.getLogger().fatalLn("Can't create mouse controller.");
+			System.exit(-1);
+		}
+		System.out.println(controllable);
 		scanControllers();
 	}
 
 	private void scanControllers() {
-		if (usingController() || !useXInputController)
+		if (usingController())
 			return;
 		Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
 		for (int i = 0; i < ca.length; i++) {
@@ -54,13 +65,14 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 				break;
 			}
 		}
-
 		if (!usingController()) {
-			controllable.getLogger().info("No gamepad detected.");
+			controllable.getLogger().infoLn("No gamepad detected.");
 		} else {
-			controllable.getLogger().info("Gamepad detected: " + activeController.getName());
+			controllable.getLogger().infoLn("Gamepad detected: " + activeController.getName());
 			Component[] components = activeController.getComponents();
 			for (Component c : components) {
+				controllerAxes.clear();
+				lastControllerAxes.clear();
 				controllerAxes.put(c.getIdentifier(), 0.0f);
 				lastControllerAxes.put(c.getIdentifier(), 0.0f);
 			}
@@ -68,17 +80,17 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	}
 
 	public void setControllable(Controllable controllable) {
+		this.controllable = controllable;
 		if (this.controllable != null) {
+			this.controllable = controllable;
 			this.controllable.getComponent().removeKeyListener(this);
 			this.controllable.getComponent().removeMouseMotionListener(this);
 			this.controllable.getComponent().removeMouseListener(this);
 			this.controllable.getComponent().removeFocusListener(this);
+		} else if(this.controllable == null) {
+			System.err.println("[ERROR]Controllable can't be null!");
+			System.exit(-1);
 		}
-		this.controllable = controllable;
-		this.controllable.getComponent().addKeyListener(this);
-		this.controllable.getComponent().addMouseMotionListener(this);
-		this.controllable.getComponent().addMouseListener(this);
-		this.controllable.getComponent().addFocusListener(this);
 	}
 
 	public void setInputs(InputAxis[] inputAxes) {
@@ -91,7 +103,6 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 				lastKeys[i] = keys[i];
 			}
 		}
-
 		for (int i = 0; i < NUM_MBTNS; i++) {
 			if (lastMouseButtons[i] != mouseButtons[i]) {
 				lastMouseButtons[i] = mouseButtons[i];
@@ -100,14 +111,16 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 		if (usingController()) {
 			if (!activeController.poll()) {
 				activeController = null;
-				controllable.getLogger().info("Controller disconnected.");
+				controllable.getLogger().infoLn("Controller disconnected.");
 			}
 		}
-		
+
 	}
-	
+
 	/**
-	 * <b>IMPORTANT:</b> Run this before you call Input.update()!!! Run all methods that need input after this method, and then call Input.update() after that.
+	 * <b>IMPORTANT:</b> Run this before you call Input.update()!!! Run all
+	 * methods that need input after this method, and then call Input.update()
+	 * after that.
 	 */
 	public void updateControllerInput() {
 		if (usingController()) {
@@ -216,11 +229,31 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 		return mouseY;
 	}
 
+	public int getMouseXOnScreen() {
+		return mouseXOnScreen;
+	}
+
+	public int getMouseYOnScreen() {
+		return mouseYOnScreen;
+	}
+
+	public void setMousePos(int x, int y) {
+		mouseController.mouseMove(x + controllable.getComponent().getX(), y + controllable.getComponent().getY());
+	}
+
+	public boolean isMouseInControllable() {
+		return mouseInControllable;
+	}
+
 	public void mouseClicked(MouseEvent e) {}
 
-	public void mouseEntered(MouseEvent e) {}
+	public void mouseEntered(MouseEvent e) {
+		mouseInControllable = true;
+	}
 
-	public void mouseExited(MouseEvent e) {}
+	public void mouseExited(MouseEvent e) {
+		mouseInControllable = false;
+	}
 
 	public void mousePressed(MouseEvent e) {
 		if (e.getButton() >= mouseButtons.length)
@@ -235,11 +268,14 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	}
 
 	public void mouseDragged(MouseEvent e) {
-		mouseX = e.getX();
-		mouseY = e.getY();
+		handleMouse(e);
 	}
 
 	public void mouseMoved(MouseEvent e) {
+		handleMouse(e);
+	}
+
+	private void handleMouse(MouseEvent e) {
 		mouseX = e.getX();
 		mouseY = e.getY();
 	}
@@ -288,7 +324,7 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 				}
 			}
 		}
-		controllable.getLogger().fatal("Cannot get axis from name: " + name);
+		controllable.getLogger().fatalLn("Cannot get axis from name: " + name);
 		System.exit(-1);
 		return null;
 	}
