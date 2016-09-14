@@ -9,7 +9,9 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import net.java.games.input.Component;
 import net.java.games.input.Controller;
@@ -26,8 +28,11 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	private boolean[] lastKeys = new boolean[NUM_KEYS];
 	private boolean[] mouseButtons = new boolean[NUM_MBTNS];
 	private boolean[] lastMouseButtons = new boolean[NUM_MBTNS];
+
 	private int mouseX = 0, mouseY = 0, mouseXOnScreen = 0, mouseYOnScreen = 0;
 	private Robot mouseController;
+
+	private List<String> currentAxesPressed;
 
 	private Controller activeController = null;
 	private HashMap<Component.Identifier, Float> controllerAxes = new HashMap<Component.Identifier, Float>();
@@ -115,6 +120,7 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 			}
 		}
 
+		updateAxesPressed();
 	}
 
 	/**
@@ -199,7 +205,8 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 				return true;
 		}
 		if (axis.getMouseCode() != InputAxis.EMPTY) {
-			if (mouseButtons[axis.getMouseCode()] != lastMouseButtons[axis.getMouseCode()] && mouseButtons[axis.getMouseCode()])
+			if (mouseButtons[axis.getMouseCode()] != lastMouseButtons[axis.getMouseCode()]
+					&& mouseButtons[axis.getMouseCode()])
 				return true;
 		}
 		if (usingController()) {
@@ -245,14 +252,14 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 		return mouseInControllable;
 	}
 
-	public void mouseClicked(MouseEvent e) {}
+	public void mouseClicked(MouseEvent e) {
+		
+	}
 
 	public void mouseEntered(MouseEvent e) {
-		mouseInControllable = true;
 	}
 
 	public void mouseExited(MouseEvent e) {
-		mouseInControllable = false;
 	}
 
 	public void mousePressed(MouseEvent e) {
@@ -292,7 +299,8 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 		keys[e.getKeyCode()] = false;
 	}
 
-	public void keyTyped(KeyEvent e) {}
+	public void keyTyped(KeyEvent e) {
+	}
 
 	public void focusGained(FocusEvent e) {
 		hasFocus = true;
@@ -329,4 +337,19 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 		return null;
 	}
 
+	private void updateAxesPressed() {
+		List<String> keys = new ArrayList<String>();
+		if (inputAxes != null) {
+			for (InputAxis a : inputAxes) {
+				if (getInput(a.getName())) {
+					keys.add(a.getName());
+				}
+			}
+		}
+		currentAxesPressed = keys;
+	}
+
+	public List<String> getAxesPressed() {
+		return new ArrayList<String>(currentAxesPressed);
+	}
 }
