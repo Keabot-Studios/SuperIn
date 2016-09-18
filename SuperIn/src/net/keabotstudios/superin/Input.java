@@ -7,6 +7,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.nio.file.attribute.UserPrincipalLookupService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,8 +49,13 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	}
 
 	private void scanControllers() {
-		if (usingController())
+		if (usingController()) {
+			if (!activeController.poll()) {
+				activeController = null;
+				controllable.getLogger().infoLn("Controller disconnected.");
+			}
 			return;
+		}
 		Controller[] ca = ControllerEnvironment.getDefaultEnvironment().getControllers();
 		for (int i = 0; i < ca.length; i++) {
 			if (ca[i].getType() == Controller.Type.GAMEPAD) {
@@ -65,7 +71,6 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 			controllerAxes.clear();
 			lastControllerAxes.clear();
 			for (Component c : components) {
-
 				controllerAxes.put(c.getIdentifier(), 0.0f);
 				lastControllerAxes.put(c.getIdentifier(), 0.0f);
 			}
@@ -101,10 +106,13 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 				lastMouseButtons[i] = mouseButtons[i];
 			}
 		}
+		scanControllers();
+
 		if (usingController()) {
-			if (!activeController.poll()) {
-				activeController = null;
-				controllable.getLogger().infoLn("Controller disconnected.");
+			for (Component comp : activeController.getComponents()) {
+				if (lastControllerAxes.get(comp.getIdentifier()) != controllerAxes.get(comp.getIdentifier())) {
+					lastControllerAxes.replace(comp.getIdentifier(), controllerAxes.get(comp.getIdentifier()));
+				}
 			}
 		}
 
@@ -118,7 +126,6 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	 */
 	public void updateControllerInput() {
 		if (usingController()) {
-			scanControllers();
 			activeController.poll();
 			EventQueue queue = activeController.getEventQueue();
 			Event event = new Event();
@@ -126,11 +133,6 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 				Component comp = event.getComponent();
 				float value = event.getValue();
 				controllerAxes.replace(comp.getIdentifier(), value);
-			}
-			for (Component comp : activeController.getComponents()) {
-				if (lastControllerAxes.get(comp.getIdentifier()) != controllerAxes.get(comp.getIdentifier())) {
-					lastControllerAxes.replace(comp.getIdentifier(), controllerAxes.get(comp.getIdentifier()));
-				}
 			}
 		}
 	}
@@ -202,11 +204,11 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 			if (axis.getIdentifier() != null) {
 				value = controllerAxes.get(axis.getIdentifier()).floatValue();
 				lastValue = lastControllerAxes.get(axis.getIdentifier()).floatValue();
-				if (axis.getActZone() >= 0) {
-					if (lastValue != value && value > axis.getActZone())
+				if (axis.getActZone() > 0) {
+					if (value >= axis.getActZone() && lastValue != value)
 						return true;
 				} else {
-					if (lastValue != value && value < axis.getActZone())
+					if (lastValue != value && value <= axis.getActZone())
 						return true;
 				}
 
