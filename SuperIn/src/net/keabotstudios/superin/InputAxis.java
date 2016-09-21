@@ -1,11 +1,14 @@
 package net.keabotstudios.superin;
 
+import java.lang.reflect.Field;
+
+import net.java.games.input.Component;
 import net.java.games.input.Component.Identifier;
 
 public class InputAxis {
-	
+
 	public static int EMPTY = -1;
-	
+
 	private final String name;
 	private int keyCode = EMPTY, mouseCode = EMPTY;
 	private Identifier identifier = null;
@@ -42,6 +45,33 @@ public class InputAxis {
 
 	public int getMouseCode() {
 		return mouseCode;
+	}
+
+	public static Identifier getIdentifierFromName(String s) {
+		if(s.equalsIgnoreCase("null"))
+			return null;
+		String[] split = s.split("\\.");
+		try {
+			if (split.length == 2) {
+				String typeName = split[0];
+				String identifier = split[1];
+				Class<?>[] declaredClasses = Component.Identifier.class.getDeclaredClasses();
+				for (int i = 0; i < declaredClasses.length; i++) {
+					if (declaredClasses[i].getName().contains(typeName)) {
+						Field[] declaredFields = declaredClasses[i].getDeclaredFields();
+						for (int j = 0; j < declaredFields.length; j++) {
+							if (declaredFields[j].getName().equals(identifier)) {
+								if (declaredFields[j].get(null) instanceof Identifier) {
+									return (Identifier) declaredFields[j].get(null);
+								}
+							}
+						}
+					}
+				}
+			}
+		} catch (Exception e) {}
+		System.err.println("Unable to get identifier from name: " + s);
+		return null;
 	}
 
 }
