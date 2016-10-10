@@ -119,9 +119,7 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	}
 
 	/**
-	 * <b>IMPORTANT:</b> Run this before you call Input.update()!!! Run all
-	 * methods that need input after this method, and then call Input.update()
-	 * after that.
+	 * <b>IMPORTANT:</b> Run this before you call Input.update()!!! Run all methods that need input after this method, and then call Input.update() after that.
 	 */
 	public void updateControllerInput() {
 		if (usingController()) {
@@ -270,6 +268,44 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 	}
 
 	public void keyTyped(KeyEvent e) {}
+
+	public int[] getAllKeyboardKeysPressed() {
+		ArrayList<Integer> pressedKeys = new ArrayList<>();
+		for(int i = 0; i < keys.length; i++) {
+			if(keys[i])
+				pressedKeys.add(i);
+		}
+		return toPrimitive(pressedKeys.toArray(new Integer[pressedKeys.size()]));
+	}
+	
+	public int[] getAllKeyboardKeysTyped() {
+		ArrayList<Integer> typedKeys = new ArrayList<>();
+		for(int i = 0; i < keys.length; i++) {
+			if(keys[i] != lastKeys[i] && keys[i])
+				typedKeys.add(i);
+		}
+		return toPrimitive(typedKeys.toArray(new Integer[typedKeys.size()]));
+	}
+
+	private static int[] toPrimitive(Integer[] IntegerArray) {
+		int[] result = new int[IntegerArray.length];
+		for (int i = 0; i < IntegerArray.length; i++) {
+			result[i] = IntegerArray[i].intValue();
+		}
+		return result;
+	}
+
+	public boolean isKeyboardKeyPressed(int keyCode) {
+		if (keyCode < 0 || keyCode > NUM_KEYS)
+			return false;
+		return keys[keyCode];
+	}
+
+	public boolean isKeyboardKeyTyped(int keyCode) {
+		if (keyCode < 0 || keyCode > NUM_KEYS)
+			return false;
+		return keys[keyCode] != lastKeys[keyCode] && keys[keyCode];
+	}
 
 	public void focusGained(FocusEvent e) {
 		hasFocus = true;
