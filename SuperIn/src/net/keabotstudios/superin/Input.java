@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import net.java.games.input.Component;
+import net.java.games.input.Component.Identifier;
 import net.java.games.input.Controller;
 import net.java.games.input.ControllerEnvironment;
 import net.java.games.input.Event;
@@ -148,16 +149,17 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 		}
 		if (usingController()) {
 			float value = 0.0f;
-			if (axis.getIdentifier() != null) {
-				value = controllerAxes.get(axis.getIdentifier()).floatValue();
-				if (axis.getActZone() > 0) {
-					if (value >= axis.getActZone())
-						return true;
-				} else {
-					if (value <= axis.getActZone())
-						return true;
+			for (Identifier identifier : axis.getIdentifiers()) {
+				if (identifier != null) {
+					value = controllerAxes.get(identifier).floatValue();
+					if (axis.getActZone() > 0) {
+						if (value >= axis.getActZone())
+							return true;
+					} else {
+						if (value <= axis.getActZone())
+							return true;
+					}
 				}
-
 			}
 		}
 		return false;
@@ -176,8 +178,10 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 				return 1.0f;
 		}
 		if (usingController()) {
-			if (axis.getIdentifier() != null) {
-				return controllerAxes.get(axis.getIdentifier()).floatValue();
+			for (Identifier identifier : axis.getIdentifiers()) {
+				if (identifier != null) {
+					return controllerAxes.get(identifier).floatValue();
+				}
 			}
 		}
 		return 0.0f;
@@ -198,17 +202,18 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 		if (usingController()) {
 			float value = 0.0f;
 			float lastValue = 0.0f;
-			if (axis.getIdentifier() != null) {
-				value = controllerAxes.get(axis.getIdentifier()).floatValue();
-				lastValue = lastControllerAxes.get(axis.getIdentifier()).floatValue();
-				if (axis.getActZone() > 0) {
-					if (value >= axis.getActZone() && lastValue != value)
-						return true;
-				} else {
-					if (lastValue != value && value <= axis.getActZone())
-						return true;
+			for (Identifier identifier : axis.getIdentifiers()) {
+				if (identifier != null) {
+					value = controllerAxes.get(identifier).floatValue();
+					lastValue = lastControllerAxes.get(identifier).floatValue();
+					if (axis.getActZone() > 0) {
+						if (value >= axis.getActZone() && lastValue != value)
+							return true;
+					} else {
+						if (lastValue != value && value <= axis.getActZone())
+							return true;
+					}
 				}
-
 			}
 		}
 		return false;
@@ -271,17 +276,17 @@ public class Input implements KeyListener, MouseMotionListener, MouseListener, F
 
 	public int[] getAllKeyboardKeysPressed() {
 		ArrayList<Integer> pressedKeys = new ArrayList<>();
-		for(int i = 0; i < keys.length; i++) {
-			if(keys[i])
+		for (int i = 0; i < keys.length; i++) {
+			if (keys[i])
 				pressedKeys.add(i);
 		}
 		return toPrimitive(pressedKeys.toArray(new Integer[pressedKeys.size()]));
 	}
-	
+
 	public int[] getAllKeyboardKeysTyped() {
 		ArrayList<Integer> typedKeys = new ArrayList<>();
-		for(int i = 0; i < keys.length; i++) {
-			if(keys[i] != lastKeys[i] && keys[i])
+		for (int i = 0; i < keys.length; i++) {
+			if (keys[i] != lastKeys[i] && keys[i])
 				typedKeys.add(i);
 		}
 		return toPrimitive(typedKeys.toArray(new Integer[typedKeys.size()]));

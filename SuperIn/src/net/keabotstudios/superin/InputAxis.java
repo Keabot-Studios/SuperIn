@@ -1,6 +1,8 @@
 package net.keabotstudios.superin;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 
 import net.java.games.input.Component;
 import net.java.games.input.Component.Identifier;
@@ -11,13 +13,24 @@ public class InputAxis {
 
 	private final String name;
 	private int keyCode = EMPTY, mouseCode = EMPTY;
-	private Identifier identifier = null;
+	private Identifier[] identifiers = null;
 	private float actZone = 0.0f;
 
 	public InputAxis(String name, int keyCode, Identifier identifier, float actZone, int mouseCode) {
 		this.name = name;
 		this.keyCode = keyCode;
-		this.identifier = identifier;
+		this.identifiers = new Identifier[1];
+		if(identifier == null) throw new NullPointerException("Identifier array should not be null, empty, or contain a null identfier!");
+		this.identifiers[0] = identifier;
+		this.actZone = actZone;
+		this.mouseCode = mouseCode;
+	}
+	
+	public InputAxis(String name, int keyCode, Identifier[] identifiers, float actZone, int mouseCode) {
+		this.name = name;
+		this.keyCode = keyCode;
+		if(identifiers.equals(null) || identifiers.length == 0 || Arrays.asList(identifiers).contains(null)) throw new NullPointerException("Identifier array should not be null, empty, or contain a null identfier!");
+		this.identifiers = identifiers;
 		this.actZone = actZone;
 		this.mouseCode = mouseCode;
 	}
@@ -35,8 +48,8 @@ public class InputAxis {
 		return keyCode;
 	}
 
-	public Identifier getIdentifier() {
-		return identifier;
+	public Identifier[] getIdentifiers() {
+		return identifiers;
 	}
 
 	public float getActZone() {
