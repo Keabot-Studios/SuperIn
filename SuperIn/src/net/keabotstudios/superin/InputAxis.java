@@ -7,7 +7,7 @@ import net.java.games.input.Component.Identifier;
 
 public class InputAxis {
 
-	public static int EMPTY = -1;
+	public static final int EMPTY = -1;
 
 	private final String name;
 	private int keyCode = EMPTY, mouseCode = EMPTY;
