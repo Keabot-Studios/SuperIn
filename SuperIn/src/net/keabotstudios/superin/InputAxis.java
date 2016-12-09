@@ -1,6 +1,5 @@
 package net.keabotstudios.superin;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
