@@ -33,6 +33,12 @@ public class InputAxis {
 		this.actZone = actZone;
 		this.mouseCode = mouseCode;
 	}
+	
+	public InputAxis(String name, int keyCode, int mouseCode) {
+		this.name = name;
+		this.keyCode = keyCode;
+		this.mouseCode = mouseCode;
+	}
 
 	public InputAxis(String name, int keyCode) {
 		this.name = name;
